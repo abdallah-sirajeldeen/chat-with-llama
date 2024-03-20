@@ -16,7 +16,7 @@ def process_and_send_image(image_path):
     connection = pika.BlockingConnection(pika.ConnectionParameters('127.0.0.1'))
     channel = connection.channel()
     channel.queue_declare(queue='image_queue')
-    channel.basic_publish(exchange='',
+    channel.basic_publish(exchange='image_queue_exchange',
                           routing_key='image_queue',
                           body=base64_image)
     connection.close()
