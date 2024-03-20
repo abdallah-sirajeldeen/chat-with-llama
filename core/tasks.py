@@ -7,7 +7,7 @@ import pika
 
 @app.task
 def process_and_send_image(image_path):
-
+    print(f'Sending image to RabbitMQ: {image_path}')
     with Image.open(image_path) as img:
         output = io.BytesIO()
         img.save(output, format='JPEG', quality=70)
