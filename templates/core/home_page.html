@@ -9,7 +9,7 @@
 <body>
     <h1>Let's share images!</h1>
 
-    <!-- Updated form to accept file input -->
+
     <form id="form">
         <input type="file" id="imageInput" accept="image/*"/>
         <input type="submit" value="Send Image"/>
@@ -18,8 +18,7 @@
     <div id="messages"></div>
 
     <script type="text/javascript">
-        let url = `ws://${window.location.host}/ws/image/`; // Ensure this is the correct path to your WebSocket endpoint
-
+        let url = `ws://${window.location.host}/ws/image/`;
         const chatSocket = new WebSocket(url);
 
         chatSocket.onmessage = function(e) {
@@ -28,7 +27,7 @@
 
             let messages = document.getElementById('messages');
 
-            // Display a confirmation message
+
             messages.insertAdjacentHTML('beforeend', `<div><p>${data.message}</p></div>`);
         };
 
@@ -40,11 +39,11 @@
                 let file = imageInput.files[0];
                 let reader = new FileReader();
                 reader.onloadend = function() {
-                    // When the file is read, send it as a base64 string
+
                     let base64Image = reader.result;
                     chatSocket.send(JSON.stringify({ imageB64: base64Image }));
                 };
-                reader.readAsDataURL(file); // Read the file
+                reader.readAsDataURL(file);
             }
         });
     </script>
