@@ -5,45 +5,48 @@
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
     <title>Lobby</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
-
 </head>
 <body>
-    <h1>Lets chat!</h1>
+    <h1>Let's share images!</h1>
 
+    <!-- Updated form to accept file input -->
     <form id="form">
-        <input type="text" name="message"/>
+        <input type="file" id="imageInput" accept="image/*"/>
+        <input type="submit" value="Send Image"/>
     </form>
 
     <div id="messages"></div>
 
     <script type="text/javascript">
-        let url = `ws://${window.location.host}/ws/websocket/`
+        let url = `ws://${window.location.host}/ws/image/`; // Ensure this is the correct path to your WebSocket endpoint
 
-        const chatSocket = new WebSocket(url)
+        const chatSocket = new WebSocket(url);
 
-        chatSocket.onmessage = function(e){
-            let data = JSON.parse(e.data)
-            console.log('Data:', data)
+        chatSocket.onmessage = function(e) {
+            let data = JSON.parse(e.data);
+            console.log('Data:', data);
 
-            if(data.type === 'chat'){
-                let messages = document.getElementById('messages')
+            let messages = document.getElementById('messages');
 
-                messages.insertAdjacentHTML('beforeend', `<div>
-                                        <p>${data.message}</p>
-                                    </div>`)
+            // Display a confirmation message
+            messages.insertAdjacentHTML('beforeend', `<div><p>${data.message}</p></div>`);
+        };
+
+        let form = document.getElementById('form');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            let imageInput = document.getElementById('imageInput');
+            if (imageInput.files.length > 0) {
+                let file = imageInput.files[0];
+                let reader = new FileReader();
+                reader.onloadend = function() {
+                    // When the file is read, send it as a base64 string
+                    let base64Image = reader.result;
+                    chatSocket.send(JSON.stringify({ imageB64: base64Image }));
+                };
+                reader.readAsDataURL(file); // Read the file
             }
-        }
-
-        let form = document.getElementById('form')
-        form.addEventListener('submit', (e)=> {
-            e.preventDefault()
-            let message = e.target.message.value
-            chatSocket.send(JSON.stringify({
-                'message':message
-            }))
-            form.reset()
-        })
-
+        });
     </script>
 </body>
 </html>

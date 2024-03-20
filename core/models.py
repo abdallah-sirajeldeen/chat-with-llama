@@ -1,13 +1,26 @@
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from core.tasks import process_and_send_image
 
-# Create your models here.
-from django.contrib.auth.models import User
+
+class Image(models.Model):
+    image = models.ImageField(upload_to='images/')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(max_length=500, blank=True)
-    location = models.CharField(max_length=30, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
-    email = models.EmailField(max_length=254, blank=True, null=True)
+class ImageData(models.Model):
+    image_data = models.BinaryField()
+    image_path = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @receiver(post_save)
+    def trigger_image_data_processing(sender, instance, created, **kwargs):
+        if created:
+            process_and_send_image.delay(instance.image_path)
+
+
+
 

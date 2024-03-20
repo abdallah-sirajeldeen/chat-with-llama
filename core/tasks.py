@@ -1,22 +1,24 @@
-from __future__ import absolute_import, unicode_literals
 from assessment.celery import app
-from django.core.mail import send_mail
-from core.models import User  # Adjust this import based on your actual User model
+from PIL import Image
+import io
+import base64
+import pika
 
 
 @app.task
-def send_email_task(email, message, **kwargs):
-    try:
-        print(email, message)
-        # Placeholder for email sending logic
-        send_mail(
-            'welcome to our site',
-            message,
-            'from@example.com',  # Adjust the sender email
-            [email],
-            fail_silently=False,
-        )
-        return f"Email sent to {email}"
-    except User.DoesNotExist:
-        return 'User not found'
+def process_and_send_image(image_path):
 
+    with Image.open(image_path) as img:
+        output = io.BytesIO()
+        img.save(output, format='JPEG', quality=70)
+        compressed_image = output.getvalue()
+
+    base64_image = base64.b64encode(compressed_image).decode('utf-8')
+
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
+    channel.queue_declare(queue='image_queue')
+    channel.basic_publish(exchange='',
+                          routing_key='image_queue',
+                          body=base64_image)
+    connection.close()
