@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: assesstment
+      POSTGRES_USER: assesstment
+      POSTGRES_PASSWORD: assesstment
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    environment:
+      RABBITMQ_DEFAULT_USER: "user"
+      RABBITMQ_DEFAULT_PASS: "password"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      - "CELERY_BROKER_URL=amqp://user:password@rabbitmq:5672//"
+      - "DJANGO_DB_NAME=assesstment"
+      - "DJANGO_DB_USER=assesstment"
+      - "DJANGO_DB_PASSWORD=assesstment"
+      - "DJANGO_DB_HOST=db"
+
+  celery:
+    build: .
+    command: celery -A assessment worker -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - web
+      - rabbitmq
+    environment:
+      - "CELERY_BROKER_URL=amqp://user:password@rabbitmq:5672//"
+
+volumes:
+  postgres_data:
