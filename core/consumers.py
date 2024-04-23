@@ -1,40 +1,41 @@
-import base64
 import json
+import os
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from datetime import datetime
-from core.models import ImageData
-import os
+from django.conf import settings
 
+# Assuming the model is loaded as a global variable in a module
+from core.apps import model
 
-class ImageConsumer(AsyncWebsocketConsumer):
+class TextConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
 
     async def disconnect(self, close_code):
+        # Optional: Add any cleanup logic here if necessary
         pass
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        image_data = text_data_json['imageB64']
-        if ',' in image_data:
-            header, image_data = image_data.split(',', 1)
-        image_decoded = base64.b64decode(image_data)
-        file_name = f'image_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpeg'
+        message = text_data_json['message']
 
-        if not os.path.exists('images'):
-            os.makedirs('images')
-        image_path = os.path.join('images', file_name)
-        with open(image_path, 'wb') as image_file:
-            image_file.write(image_decoded)
+        # Get prediction from the GPT model
+        response = await self.get_prediction(message)
+        print(response)  # For debugging, consider using logging instead of print in production
 
-        model_instance = ImageData()
-        model_instance.image_data = image_decoded
-        model_instance.image_path = image_path
-
-        await database_sync_to_async(model_instance.save)()
-
+        # Send the model's response back to the client
         await self.send(text_data=json.dumps({
-            'message': f'Image received and saved as {file_name}'
+            'response': response
         }))
+
+    @database_sync_to_async
+    def get_prediction(self, input_text):
+        # Ensure this function is thread-safe and does not manipulate shared states
+        output = model.predict(input_text)
+        return output
+
+    # Ensure that you're handling errors and exceptions appropriately
+    async def handle_exception(self, e):
+        error_message = str(e)
+        await self.send(text_data=json.dumps({'error': error_message}))

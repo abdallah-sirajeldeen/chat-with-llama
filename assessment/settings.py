@@ -33,7 +33,7 @@ ALLOWED_HOSTS = ["*"]
 INSTALLED_APPS = [
     "daphne",
     "channels",
-    "core",
+    "core.apps.CoreConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -107,7 +107,7 @@ DATABASES = {
     },
 }
 
-
+LOAD_MODEL_AT_STARTUP = True
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

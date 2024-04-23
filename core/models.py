@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from core.tasks import process_and_send_image
+
 
 
 class Image(models.Model):
@@ -23,7 +23,7 @@ class ImageData(models.Model):
     def trigger_image_data_processing(sender, instance, created, **kwargs):
         if created:
             image_path = os.path.join(settings.MEDIA_ROOT, instance.image_path)
-            process_and_send_image.delay(image_path)
+
 
 
 

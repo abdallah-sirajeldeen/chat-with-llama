@@ -1,49 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset='utf-8'>
-    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>image converter</title>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with AI Model</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        #chat-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 600px;
+            margin: 50px auto;
+        }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+        }
+        #user-input {
+            width: calc(100% - 110px);
+            padding: 10px;
+            float: left;
+        }
+        #send-button {
+            width: 100px;
+            padding: 10px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+        }
+        .message {
+            padding: 5px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+        .server-message {
+            background-color: #e1f5fe;
+        }
+    </style>
 </head>
 <body>
-    <h1>Let's share images!</h1>
+    <div id="chat-container">
+        <div id="messages"></div>
+        <input type="text" id="user-input" placeholder="Type your message here...">
+        <button id="send-button">Send</button>
+    </div>
+    <script>
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const messagesContainer = document.getElementById('messages');
 
+        const ws = new WebSocket('ws://' + window.location.host + '/ws/text/');
 
-    <form id="form">
-        <input type="file" id="imageInput" accept="image/*"/>
-        <input type="submit" value="Send Image"/>
-    </form>
-
-    <div id="messages"></div>
-
-    <script type="text/javascript">
-        let url = `ws://${window.location.host}/ws/image/`;
-        const chatSocket = new WebSocket(url);
-
-        chatSocket.onmessage = function(e) {
-            let data = JSON.parse(e.data);
-            console.log('Data:', data);
-
-            let messages = document.getElementById('messages');
-
-
-            messages.insertAdjacentHTML('beforeend', `<div><p>${data.message}</p></div>`);
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const message = document.createElement('div');
+            message.classList.add('message', 'server-message');
+            message.textContent = data.response || 'Error: No response from server';
+            messagesContainer.appendChild(message);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         };
 
-        let form = document.getElementById('form');
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            let imageInput = document.getElementById('imageInput');
-            if (imageInput.files.length > 0) {
-                let file = imageInput.files[0];
-                let reader = new FileReader();
-                reader.onloadend = function() {
+        sendButton.onclick = function() {
+            const message = userInput.value.trim();
+            if (message) {
+                ws.send(JSON.stringify({'message': message}));
+                displayUserMessage(message);
+                userInput.value = '';
+                userInput.focus();
+            }
+        };
 
-                    let base64Image = reader.result;
-                    chatSocket.send(JSON.stringify({ imageB64: base64Image }));
-                };
-                reader.readAsDataURL(file);
+        function displayUserMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.textContent = message;
+            messagesContainer.appendChild(messageDiv);
+        }
+
+        userInput.addEventListener("keyup", function(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                sendButton.click();
             }
         });
     </script>
