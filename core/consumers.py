@@ -7,6 +7,8 @@ from django.conf import settings
 
 # Assuming the model is loaded as a global variable in a module
 from core.apps import model
+from core.gpt_model import predict_prompt
+
 
 class TextConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -22,7 +24,8 @@ class TextConsumer(AsyncWebsocketConsumer):
 
         # Get prediction from the GPT model
         response = await self.get_prediction(message)
-        print(response)  # For debugging, consider using logging instead of print in production
+        print(response)
+
 
         # Send the model's response back to the client
         await self.send(text_data=json.dumps({
@@ -32,7 +35,7 @@ class TextConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_prediction(self, input_text):
         # Ensure this function is thread-safe and does not manipulate shared states
-        output = model.predict(input_text)
+        output = predict_prompt(input_text)
         return output
 
     # Ensure that you're handling errors and exceptions appropriately
